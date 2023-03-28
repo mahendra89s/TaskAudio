@@ -4,16 +4,26 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AFSKDecoder1 {
     static final int ONE_DURATION = 320; // in microseconds
     static final int ZERO_DURATION = 640; // in microseconds
+    private static final byte[] LEAD_TONE = new byte[2_500_000]; // 2.5 seconds of 1-bits
+    private static final byte[] END_BLOCK = new byte[500_000]; // 0.5 seconds of 1-bits
+
+    static {
+        // Initialize the lead tone and end block arrays with 1-bits
+        java.util.Arrays.fill(LEAD_TONE, (byte) 0xFF);
+        java.util.Arrays.fill(END_BLOCK, (byte) 0xFF);
+    }
     public static void main(String[] args) throws Exception {
         try {
             // Step 1: Read the audio file and extract the audio data
-            File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_2.wav");
+            File audioFile = new File("//home//user//TaskAudio//src//file_2.wav");
 
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
 
@@ -33,9 +43,9 @@ public class AFSKDecoder1 {
             byte[] audioData = new byte[totalBytes];
             audioIn.read(audioData);
 
-
             // Step 2: Decode the audio data using AFSK modulation
             StringBuilder bitStreamBuilder = new StringBuilder();
+
             int sampleRate = 44100;
             int zeroThreshold = 15000; // adjust this threshold based on the audio file
             for (int i = 0; i < audioData.length; i += 2) {
@@ -47,7 +57,8 @@ public class AFSKDecoder1 {
                 }
             }
 
-            // Step 3: Convert the bitstream into bytes
+
+             //Step 3: Convert the bitstream into bytes
             StringBuilder byteStreamBuilder = new StringBuilder();
             String bitStream = bitStreamBuilder.toString();
             for (int i = 0; i < bitStream.length(); i += 11) {
@@ -87,5 +98,20 @@ public class AFSKDecoder1 {
         }
     }
 
-
+    // Find the index of the first occurrence of the given subsequence in the byte array
+    private static int findSubsequence(byte[] array, byte[] subsequence) {
+        for (int i = 0; i <= array.length - subsequence.length; i++) {
+            boolean match = true;
+            for (int j = 0; j < subsequence.length; j++) {
+                if (array[i + j] != subsequence[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Subsequence not found");
+    }
 }
