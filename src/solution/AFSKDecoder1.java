@@ -23,7 +23,7 @@ public class AFSKDecoder1 {
     public static void main(String[] args) throws Exception {
         try {
             // Step 1: Read the audio file and extract the audio data
-            File audioFile = new File("//home//user//TaskAudio//src//file_2.wav");
+            File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_2.wav");
 
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
 
@@ -71,7 +71,7 @@ public class AFSKDecoder1 {
             StringBuilder messageBuilder = new StringBuilder();
             int byteCount = 0;
             for (int i = 0; i < byteStream.length(); i += 11) {
-                String byteString = byteStream.substring(i, i + 8);
+                String byteString = byteStream.substring(i+1, i + 8);
                 byte b = (byte) Integer.parseInt(byteString, 2);
                 messageBuilder.append((char) b);
                 byteCount++;
@@ -96,22 +96,5 @@ public class AFSKDecoder1 {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    // Find the index of the first occurrence of the given subsequence in the byte array
-    private static int findSubsequence(byte[] array, byte[] subsequence) {
-        for (int i = 0; i <= array.length - subsequence.length; i++) {
-            boolean match = true;
-            for (int j = 0; j < subsequence.length; j++) {
-                if (array[i + j] != subsequence[j]) {
-                    match = false;
-                    break;
-                }
-            }
-            if (match) {
-                return i;
-            }
-        }
-        throw new IllegalArgumentException("Subsequence not found");
     }
 }

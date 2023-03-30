@@ -16,14 +16,14 @@ public class NewDecoder {
         double sampleRate = 44100; // the audio sample rate
         double lowFrequency = 1200; // the low AFSK frequency
         double highFrequency = 2200; // the high AFSK frequency
-        int bitDuration = (int) Math.round(sampleRate / (2 * lowFrequency)); // the number of samples per bit
+        int bitDuration = 16 /*(int) Math.round(sampleRate / (2 * highFrequency))*/; // the number of samples per bit
         int halfBitDuration = bitDuration / 2;
         int zeroDuration = (int) Math.round(sampleRate * 640 / 1000000); // duration of a zero bit in samples
         int oneDuration = (int) Math.round(sampleRate * 320 / 1000000); // duration of a one bit in samples
         int leadDuration = (int) Math.round(sampleRate * 2.5); // duration of the lead tone in samples
         int endDuration = (int) Math.round(sampleRate * 0.5); // duration of the end block in samples
 
-        File audioFile = new File("//home//user//TaskAudio//src//file_2.wav");
+        File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_2.wav");
 
         AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
 
@@ -43,7 +43,7 @@ public class NewDecoder {
         byte[] audioData = new byte[totalBytes];
         audioIn.read(audioData);
 
-// detect zero crossings
+        // detect zero crossings
         List<Integer> zeroCrossings = new ArrayList<>();
         for (int i = 1; i < audioData.length; i++) {
             if ((audioData[i] > 0 && audioData[i - 1] < 0) || (audioData[i] < 0 && audioData[i - 1] > 0)) {
@@ -51,7 +51,7 @@ public class NewDecoder {
             }
         }
 
-// detect transitions and decode bits
+        // detect transitions and decode bits
         List<Integer> transitions = new ArrayList<>();
         for (int i = 1; i < zeroCrossings.size(); i++) {
             int duration = zeroCrossings.get(i) - zeroCrossings.get(i - 1);
@@ -62,22 +62,20 @@ public class NewDecoder {
             }
         }
 
-// remove lead tone and end block
+        // remove lead tone and end block
         transitions = transitions.subList(leadDuration / bitDuration, transitions.size() - endDuration / bitDuration);
 
-// group bits into bytes
+        // group bits into bytes
         List<Integer> bits = new ArrayList<>();
-        for (int i = 0; i < transitions.size() - 1; i += 2) {
+        for (int i = 0; i < transitions.size()-1 ; i += 2) {
             int byteValue = 0;
             for (int j = i + 1; j < i + 9; j++) {
-
-                    byteValue |= transitions.get(j) << (j - i - 1);
-
+                byteValue |= transitions.get(j) << (j - i - 1);
             }
             bits.add(byteValue);
         }
 
-// convert bits to bytes
+        // convert bits to bytes
         byte[] byteStream = new byte[bits.size()];
         for (int i = 0; i < bits.size(); i++) {
             byteStream[i] = (byte) bits.get(i).intValue();
@@ -92,13 +90,13 @@ public class NewDecoder {
         }
 
 
-// check the first two bytes
-       /* if (byteStream[0] != (byte) 0x42 || byteStream[1] != (byte) 0x03) {
+        // check the first two bytes
+        if (byteStream[0] != (byte) 0x42 || byteStream[1] != (byte) 0x03) {
             throw new IllegalArgumentException("Invalid byte stream format.");
-        }*/
+        }
 
-// extract the messages
-       /* List<byte[]> messages = new ArrayList<>();
+        // extract the messages
+        List<byte[]> messages = new ArrayList<>();
         for (int i = 2; i < byteStream.length - 1; i += 31) {
             byte[] message = Arrays.copyOfRange(byteStream, i, i + 30);
             byte checksum = byteStream[i + 30];
@@ -106,9 +104,9 @@ public class NewDecoder {
                 throw new IllegalArgumentException("Invalid message checksum.");
             }
             messages.add(message);
-        }*/
+        }
 
-// verify the checksums
+        // verify the checksums
         for (int i = 0; i < byteStream.length; i += 31) {
             byte[] message = Arrays.copyOfRange(byteStream, i, i + 30);
             byte checksum = byteStream[i + 30];
@@ -118,12 +116,12 @@ public class NewDecoder {
         }
 
 
-// check the last byte
+        // check the last byte
         if (byteStream[byteStream.length - 1] != (byte) 0x00) {
             //throw new IllegalArgumentException("Invalid byte stream format.");
         }
 
-// calculate the checksum of a message
+        // calculate the checksum of a message
 
 
         String text = new String(byteStream, StandardCharsets.US_ASCII);
