@@ -4,10 +4,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AFSKDecoder1 {
     static final int ONE_DURATION = 320; // in microseconds
@@ -47,7 +43,7 @@ public class AFSKDecoder1 {
             StringBuilder bitStreamBuilder = new StringBuilder();
 
             int sampleRate = 44100;
-            int zeroThreshold = 15000; // adjust this threshold based on the audio file
+
             for (int i = 0; i < audioData.length; i += 2) {
                 int sample = (audioData[i + 1] << 11) | (audioData[i] & 0xff);
                 if (sample > sampleRate) {

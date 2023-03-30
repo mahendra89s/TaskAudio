@@ -126,7 +126,10 @@ public class NewSolution {
         byte[] binaryData = new byte[numBytes];
         for (int i = 0; i < numBytes; i++) {
             String byteString = binaryDataString.substring(i * 8, (i + 1) * 8);
-            binaryData[i] = (byte) Integer.parseInt(byteString, 2);
+            try{
+                binaryData[i] = (byte) Integer.parseInt(byteString, 2);
+            }catch (Exception e){}
+
         }
 
         return binaryData;

@@ -16,7 +16,7 @@ public class NewDecoder {
         double sampleRate = 44100; // the audio sample rate
         double lowFrequency = 1200; // the low AFSK frequency
         double highFrequency = 2200; // the high AFSK frequency
-        int bitDuration = 16 /*(int) Math.round(sampleRate / (2 * highFrequency))*/; // the number of samples per bit
+        int bitDuration = 16 ; // the number of samples per bit
         int halfBitDuration = bitDuration / 2;
         int zeroDuration = (int) Math.round(sampleRate * 640 / 1000000); // duration of a zero bit in samples
         int oneDuration = (int) Math.round(sampleRate * 320 / 1000000); // duration of a one bit in samples
@@ -69,7 +69,7 @@ public class NewDecoder {
         List<Integer> bits = new ArrayList<>();
         for (int i = 0; i < transitions.size()-1 ; i += 2) {
             int byteValue = 0;
-            for (int j = i + 1; j < i + 9; j++) {
+            for (int j = i + 1; j < i + 9 && j<transitions.size(); j++) {
                 byteValue |= transitions.get(j) << (j - i - 1);
             }
             bits.add(byteValue);
@@ -111,14 +111,14 @@ public class NewDecoder {
             byte[] message = Arrays.copyOfRange(byteStream, i, i + 30);
             byte checksum = byteStream[i + 30];
             if (calculateChecksum(message) != checksum) {
-               // throw new IllegalArgumentException("Invalid message checksum.");
+                throw new IllegalArgumentException("Invalid message checksum.");
             }
         }
 
 
         // check the last byte
         if (byteStream[byteStream.length - 1] != (byte) 0x00) {
-            //throw new IllegalArgumentException("Invalid byte stream format.");
+            throw new IllegalArgumentException("Invalid byte stream format.");
         }
 
         // calculate the checksum of a message
