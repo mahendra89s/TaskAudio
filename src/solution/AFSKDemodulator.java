@@ -17,10 +17,11 @@ public class AFSKDemodulator {
     private static final int CHECKSUM_LENGTH = 1; // 1 byte for checksum
 
     public static void main(String[] args) throws Exception {
-        byte[] byteStream =  demodulate("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
+        byte[] byteStream = demodulate("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
         String text = new String(byteStream, StandardCharsets.US_ASCII);
         System.out.println(text);
     }
+
     public static byte[] demodulate(String filename) throws Exception {
         AudioInputStream ais = AudioSystem.getAudioInputStream(new File(filename));
         AudioFormat format = ais.getFormat();
@@ -73,51 +74,45 @@ public class AFSKDemodulator {
     }
 
     private static double getSample(byte[] buffer, int offset, AudioFormat format) {
-        if (format.getSampleSizeInBits() == 8) {
-            return (double) (buffer[offset]) / 128.0;
-        } else {
-            return (double) (buffer[offset + 1] << 8 | buffer[offset] & 0xFF) / 32768.0;
-        }
+        return buffer[offset + 1] << 11 | buffer[offset] & 0xFF;
     }
 
 
-
-        private static int getZeroCrossing ( double sample, byte[] buffer, int offset, int frameSize, AudioFormat format)
-        {
-            double prevSample = getSample(buffer, offset - frameSize, format);
-            double slope = sample - prevSample;
-            int sign = slope >= 0 ? 1 : -1;
-            int zeroCrossing = -1;
-            if (sign * prevSample <= 0 && sign * sample >= 0) {
-                zeroCrossing = offset;
-            } else if (Math.abs(slope) >= 0.05) {
-                zeroCrossing = offset - (int) (sample * frameSize / slope);
-            }
-            return zeroCrossing;
+    private static int getZeroCrossing(double sample, byte[] buffer, int offset, int frameSize, AudioFormat format) {
+        double prevSample = getSample(buffer, offset - frameSize, format);
+        double slope = sample - prevSample;
+        int sign = slope >= 0 ? 1 : -1;
+        int zeroCrossing = -1;
+        if (sign * prevSample <= 0 && sign * sample >= 0) {
+            zeroCrossing = offset;
+        } else if (Math.abs(slope) >= 0.05) {
+            zeroCrossing = offset - (int) (sample * frameSize / slope);
         }
+        return zeroCrossing;
+    }
 
-        private static int demodulateBit ( int length, float sampleRate){
-            if (length >= ONE_LENGTH * sampleRate / 1000000) {
-                return 1;
-            } else {
-                return 0;
-            }
+    private static int demodulateBit(int length, float sampleRate) {
+        if (length >= ONE_LENGTH * sampleRate / 1000000) {
+            return 1;
+        } else {
+            return 0;
         }
+    }
 
-        private static byte[] readMessage (AudioInputStream ais,int totalBytes) throws IOException {
-            byte[] message = new byte[totalBytes];
-            int bytesRead = ais.read(message);
-            if (bytesRead != totalBytes) {
-                return null;
-            }
-            int checksum = 0;
-            for (int i = 0; i < message.length - CHECKSUM_LENGTH; i++) {
-                checksum += message[i];
-            }
-            if ((checksum & 0xFF) != message[message.length - 1]) {
-                return null;
-            }
-            return message;
+    private static byte[] readMessage(AudioInputStream ais, int totalBytes) throws IOException {
+        byte[] message = new byte[totalBytes];
+        int bytesRead = ais.read(message);
+        if (bytesRead != totalBytes) {
+            return null;
         }
+        int checksum = 0;
+        for (int i = 0; i < message.length - CHECKSUM_LENGTH; i++) {
+            checksum += message[i];
+        }
+        if ((checksum & 0xFF) != message[message.length - 1]) {
+            return null;
+        }
+        return message;
+    }
 
 }

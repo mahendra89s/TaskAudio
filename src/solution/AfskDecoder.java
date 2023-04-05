@@ -83,43 +83,6 @@ public class AfskDecoder {
         return baos.toByteArray();
     }
 
-   /* private void info(String msg) {
-        infoMessages.add(msg);
-    }
-
-    private void error(String msg) {
-        errorMessages.add(msg);
-    }
-
-    private void message(String msg) {
-        messageBuilder.append(msg);
-    }
-
-    private void raw(byte[] data) {
-        for (byte b : data) {
-            rawBytes.add(b);
-        }
-    }
-
-    public List<String> getInfoMessages() {
-        return infoMessages;
-    }
-
-    public List<String> getErrorMessages() {
-        return errorMessages;
-    }*/
-
-    public String getMessage() {
-        return messageBuilder.toString();
-    }
-
-    /*public byte[] getRawBytes() {
-        return Bytes.toArray(rawBytes);
-    }*/
-
-
-
-
     public static class ZeroCrossingDetector {
 
         public List<Integer> detect(byte[] samples) {
@@ -154,17 +117,13 @@ public class AfskDecoder {
 
             return bits;
         }
-
-        public void setThreshold(int threshold) {
-            this.threshold = threshold;
-        }
     }
 
 
     public static class ByteDetector {
 
         private int byteStartIndex = 0;
-        private List<Byte> bytes = new ArrayList<>();
+        private final List<Byte> bytes = new ArrayList<>();
 
         public List<Byte> detect(byte[] bits) {
             for (int i = 0; i < bits.length; i++) {

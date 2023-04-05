@@ -4,70 +4,102 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 public class AFSKDecoder1 {
-    static final int ONE_DURATION = 320; // in microseconds
-    static final int ZERO_DURATION = 640; // in microseconds
-    private static final byte[] LEAD_TONE = new byte[2_500_000]; // 2.5 seconds of 1-bits
-    private static final byte[] END_BLOCK = new byte[500_000]; // 0.5 seconds of 1-bits
-
-    static {
-        // Initialize the lead tone and end block arrays with 1-bits
-        java.util.Arrays.fill(LEAD_TONE, (byte) 0xFF);
-        java.util.Arrays.fill(END_BLOCK, (byte) 0xFF);
-    }
     public static void main(String[] args) throws Exception {
         try {
             // Step 1: Read the audio file and extract the audio data
-            File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_2.wav");
+            File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
+
 
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
 
-            // Get the audio format
-            AudioFormat format = audioIn.getFormat();
 
-            // Calculate the number of bytes per frame
-            int bytesPerFrame = format.getFrameSize();
 
-            // Calculate the number of frames in the audio stream
-            long frames = audioIn.getFrameLength();
-
-            // Calculate the total number of bytes in the audio stream
-            int totalBytes = (int) (frames * bytesPerFrame);
-
-            // Read all bytes from the audio stream
-            byte[] audioData = new byte[totalBytes];
-            audioIn.read(audioData);
-
-            // Step 2: Decode the audio data using AFSK modulation
             StringBuilder bitStreamBuilder = new StringBuilder();
 
-            int sampleRate = 44100;
 
-            for (int i = 0; i < audioData.length; i += 2) {
-                int sample = (audioData[i + 1] << 11) | (audioData[i] & 0xff);
-                if (sample > sampleRate) {
+            int numChannels = audioIn.getFormat().getChannels();
+            int bytesPerSample = audioIn.getFormat().getSampleSizeInBits() / 8;
+            int frameSize = numChannels * bytesPerSample;
+            int sampleRate = (int) audioIn.getFormat().getSampleRate();
+            int numSamples = (int) (audioIn.getFrameLength() * numChannels);
+            //byte[] audioData = new byte[numSamples * bytesPerSample];
+
+            //audioIn.read(audioData);
+
+            File file = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
+            byte[] audioData = new byte[(int) file.length()];
+            try (FileInputStream fis = new FileInputStream(file)) {
+                fis.read(audioData);
+            }
+
+            int zeroDuration = (sampleRate * 640) / 1000000;
+            int oneDuration = (sampleRate * 320) / 1000000;
+
+            // Decode the audio data using AFSK modulation
+            int[] samples = new int[numSamples];
+            for (int i = 0; i < numSamples; i++) {
+                int sampleValue = 0;
+                for (int j = 0; j < bytesPerSample; j++) {
+                    int offset = (i * frameSize) + (j * numChannels);
+                    if (offset < audioData.length) {
+                        sampleValue |= ((int) audioData[offset]) << (j * 8);
+                    }
+                }
+                samples[i] = sampleValue;
+            }
+
+            List<Integer> zeroCrossings = new ArrayList<>();
+            for (int i = 1; i < numSamples; i++) {
+                if ((samples[i - 1] >= 0 && samples[i] < 0) || (samples[i - 1] < 0 && samples[i] >= 0)) {
+                    zeroCrossings.add(i);
+                }
+            }
+
+            for (int i = 1; i < zeroCrossings.size(); i++) {
+                int period = zeroCrossings.get(i) - zeroCrossings.get(i - 1);
+                if (period < zeroDuration) {
                     bitStreamBuilder.append("1");
                 } else {
                     bitStreamBuilder.append("0");
                 }
             }
 
+            // remove lead tone and end block
+            int startIndex = (int) Math.ceil(2.5 * sampleRate)/11;
+            int endIndex = bitStreamBuilder.length() - (int) Math.ceil(0.5 * sampleRate)/11;
+            String dataBits = bitStreamBuilder.substring(startIndex, endIndex);
 
-             //Step 3: Convert the bitstream into bytes
+            //remove header of 2 bytes and 1 byte at end
+            /*int startIndex1 = 22;
+            int endIndex1 = dataBits.length()-11;
+            String dataBits1 = dataBits.substring(startIndex1,endIndex1);*/
+
+            // Convert the bitstream into bytes
             StringBuilder byteStreamBuilder = new StringBuilder();
-            String bitStream = bitStreamBuilder.toString();
+            String bitStream = dataBits.toString();
             for (int i = 0; i < bitStream.length(); i += 11) {
-                String byteString = bitStream.substring(i, i + 8);
-                byteStreamBuilder.append(byteString);
+                if(i+9 < bitStream.length()){
+                    StringBuilder byteString = new StringBuilder(bitStream.substring(i + 1, i + 9));
+                    //encoded with least significant bit first
+                    byteString.reverse();
+                    byteStreamBuilder.append(byteString);
+                }
             }
             String byteStream = byteStreamBuilder.toString();
 
-            // Step 4: Verify the checksum of each message
+            //Verify the checksum of each message
             StringBuilder messageBuilder = new StringBuilder();
             int byteCount = 0;
-            for (int i = 0; i < byteStream.length(); i += 11) {
-                String byteString = byteStream.substring(i+1, i + 8);
+            for (int i = 0; i < byteStream.length(); i += 8) {
+                String byteString = byteStream.substring(i, i + 8);
                 byte b = (byte) Integer.parseInt(byteString, 2);
                 messageBuilder.append((char) b);
                 byteCount++;
@@ -86,11 +118,12 @@ public class AFSKDecoder1 {
                 }
             }
 
-            // Step 5: Extract the human-readable text from the decoded data
+            // Extract the human-readable text from the decoded data
             String message = messageBuilder.toString();
             System.out.println(message);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
+
 }
