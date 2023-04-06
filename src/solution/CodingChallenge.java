@@ -1,49 +1,31 @@
 package solution;
 
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
-public class AFSKDecoder1 {
+public class CodingChallenge {
     public static void main(String[] args) throws Exception {
         try {
             // Step 1: Read the audio file and extract the audio data
             File audioFile = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
-
-
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
-
-
-
-            StringBuilder bitStreamBuilder = new StringBuilder();
-
-
             int numChannels = audioIn.getFormat().getChannels();
             int bytesPerSample = audioIn.getFormat().getSampleSizeInBits() / 8;
             int frameSize = numChannels * bytesPerSample;
             int sampleRate = (int) audioIn.getFormat().getSampleRate();
             int numSamples = (int) (audioIn.getFrameLength() * numChannels);
-            //byte[] audioData = new byte[numSamples * bytesPerSample];
 
-            //audioIn.read(audioData);
-
-            File file = new File("//Users//webwerks//IdeaProjects//Audio Task//src//file_1.wav");
-            byte[] audioData = new byte[(int) file.length()];
-            try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] audioData = new byte[(int) audioFile.length()];
+            try (FileInputStream fis = new FileInputStream(audioFile)) {
                 fis.read(audioData);
             }
 
             int zeroDuration = (sampleRate * 640) / 1000000;
             int oneDuration = (sampleRate * 320) / 1000000;
 
-            // Decode the audio data using AFSK modulation
             int[] samples = new int[numSamples];
             for (int i = 0; i < numSamples; i++) {
                 int sampleValue = 0;
@@ -63,6 +45,7 @@ public class AFSKDecoder1 {
                 }
             }
 
+            StringBuilder bitStreamBuilder = new StringBuilder();
             for (int i = 1; i < zeroCrossings.size(); i++) {
                 int period = zeroCrossings.get(i) - zeroCrossings.get(i - 1);
                 if (period < zeroDuration) {
